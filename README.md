@@ -6,18 +6,18 @@ Workspace para designers gráficos, social media e profissionais de comunicaçã
 
 1. Instale Node.js LTS.
 2. Execute `npm install`.
-3. Copie `.env.example` para `.env.local` e preencha as credenciais públicas do projeto Supabase.
+3. Copie `.env.example` para `.env.local` e use a URL e a chave publicável do Supabase indicadas no `.env.example`.
 4. Execute `npm run dev`.
 
 Sem variáveis do Supabase, a interface funciona em modo demonstração. Dados de exemplo são locais e não persistem entre sessões.
 
 ## Deploy na Vercel
 
-Importe este repositório na Vercel, adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` nas variáveis de ambiente e faça o deploy. O `vercel.json` encaminha rotas para o app SPA.
+Importe este repositório na Vercel, adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` nas variáveis de ambiente e faça o deploy. O `vercel.json` encaminha rotas para o app SPA.
 
 ## Supabase
 
-O arquivo `supabase/schema.sql` contém um ponto de partida para tabelas com Row Level Security. Revise as políticas antes de usar em produção. Ative Google OAuth em Authentication > Providers e configure URLs de redirecionamento no painel do Supabase e no Google Cloud.
+O arquivo `supabase/schema.sql` contém um ponto de partida para tabelas com Row Level Security. Revise as políticas antes de usar em produção. Ative Google OAuth em Authentication > Sign In / Providers e configure URLs de redirecionamento no painel do Supabase e no Google Cloud.
 
 ## Situação das integrações
 
