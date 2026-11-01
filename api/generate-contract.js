@@ -2,7 +2,15 @@ function fallbackContract(body) {
   const value = (v) => String(v || '').trim() || '[PREENCHER]';
   const c = body.contractor || {};
   const h = body.hired || {};
-  const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Bahia' });
+  const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const location = value(body.location || '');
+  const includeWitnesses = body.includeWitnesses !== 'Não';
+  const additional = String(body.additionalTerms || '').trim();
+  const forumMatch = additional.match(/(?:foro|f[oó]rum)\s*(?:escolhido|eleito|de elei[cç][aã]o)?\s*[:\-]\s*([^\n.;]+)/i);
+  const forumClause = forumMatch ? `\n\n11. ELEIÇÃO DE FORO\nPara dirimir controvérsias decorrentes deste contrato, as partes elegem o foro da comarca de ${forumMatch[1].trim()}, observadas as regras legais de competência aplicáveis e as hipóteses de competência absoluta.\n` : '';
+  const additionalClause = additional && !forumMatch ? `\n\n11. CLÁUSULAS E CONDIÇÕES ADICIONAIS\nAs partes registram a seguinte condição adicional, a ser conferida e detalhada antes da assinatura: ${additional}.` : '';
+  const extraClauses = forumClause || additionalClause;
+  const finalNumber = extraClauses ? '12' : '11';
   return `${value(body.contractName || 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS').toUpperCase()}
 
 Pelo presente instrumento particular, de um lado:
@@ -34,7 +42,7 @@ Estão previstas as seguintes revisões: ${value(body.revisions)}. Solicitaçõe
 O(A) CONTRATADO(A) deverá executar os serviços acordados com diligência e comunicar eventuais impedimentos relevantes. O(A) CONTRATANTE deverá fornecer informações, materiais, acessos e aprovações necessários em tempo hábil, além de cumprir as condições de pagamento acordadas.
 
 7. DIREITOS AUTORAIS E USO DE MATERIAIS
-A titularidade, licença de uso, entrega de arquivos editáveis e eventual autorização para uso de marcas, imagens ou portfólio deverão ser definidas expressamente pelas partes, respeitando a legislação aplicável e os direitos de terceiros. Condições específicas: ${value(body.additionalTerms)}.
+A titularidade, licença de uso, entrega de arquivos editáveis e eventual autorização para uso de marcas, imagens ou portfólio deverão ser definidas expressamente pelas partes, respeitando a legislação aplicável e os direitos de terceiros. Condições específicas: [DEFINIR EXPRESSAMENTE ENTRE AS PARTES].
 
 8. CONFIDENCIALIDADE E DADOS PESSOAIS
 As partes deverão tratar com cuidado as informações confidenciais recebidas e utilizar dados pessoais apenas para finalidades legítimas relacionadas à execução do serviço, observando a legislação aplicável, inclusive a LGPD, quando pertinente.
@@ -78,7 +86,7 @@ export default async function handler(req, res) {
     if (required.some(value => !String(value || '').trim())) {
       return res.status(400).json({ error: 'Informe contratante, contratado e serviço.' });
     }
-    const prompt = `Redija uma MINUTA / PRÉ-CONTRATO em português brasileiro para prestação de serviços de comunicação, design, conteúdo ou marketing, com linguagem clara e profissional. Não afirme que é aconselhamento jurídico e não garanta validade legal. Não invente CPF/CNPJ, endereço, datas, valores, prazos ou condições que não foram fornecidos: indique [PREENCHER] quando faltar informação essencial. Preserve os termos informados pelo usuário e organize o documento com título, qualificação das partes, objeto, escopo e entregáveis, cronograma e vigência, valor e forma de pagamento, revisões e aprovações, responsabilidades das partes, direitos autorais/licenças e uso de imagem quando pertinente, confidencialidade quando pertinente, cancelamento/rescisão, tratamento de dados pessoais quando pertinente, solução de divergências, local/data e campos de assinatura. Não crie multas ou obrigações específicas não informadas; se relevantes, sinalize como cláusula a definir. Inclua uma nota final de que é minuta para revisão antes da assinatura. Entregue somente o texto final do contrato, sem comentários sobre o prompt.
+    const prompt = `Redija uma MINUTA / PRÉ-CONTRATO em português brasileiro para prestação de serviços de comunicação, design, conteúdo ou marketing, com linguagem clara e profissional. Não afirme que é aconselhamento jurídico e não garanta validade legal. Não invente CPF/CNPJ, endereço, datas, valores, prazos ou condições que não foram fornecidos: indique [PREENCHER] quando faltar informação essencial. Interprete o campo de informações adicionais como instruções semânticas para redigir cláusulas contratuais completas, específicas, tituladas e numeradas; não copie o pedido literalmente para disposições gerais. Por exemplo, “Fórum escolhido: Bom Jesus da Lapa” significa redigir uma cláusula de eleição do foro da comarca de Bom Jesus da Lapa/BA, respeitando as regras legais de competência aplicáveis. Coloque cada pedido na seção apropriada, sem duplicar a anotação original. Preserve os termos informados pelo usuário e organize o documento com título, qualificação das partes, objeto, escopo e entregáveis, cronograma e vigência, valor e forma de pagamento, revisões e aprovações, responsabilidades das partes, direitos autorais/licenças e uso de imagem quando pertinente, confidencialidade quando pertinente, cancelamento/rescisão, tratamento de dados pessoais quando pertinente, solução de divergências, local/data e campos de assinatura. Não crie multas ou obrigações específicas não informadas; se relevantes, sinalize como cláusula a definir. Inclua uma nota final de que é minuta para revisão antes da assinatura. Entregue somente o texto final do contrato, sem comentários sobre o prompt. Inclua o local informado em LOCAL, DATA E ASSINATURAS. Se a opção de testemunhas for “Sim”, inclua nome e CPF de duas testemunhas; se for “Não”, omita os campos de testemunhas. Não deixe a nota “minuta preliminar gerada automaticamente” dentro das disposições gerais; mantenha-a somente como nota final.
 
 DADOS DO PRÉ-ESCOPO:
 Nome do contrato: ${body.contractName || 'Contrato de prestação de serviços'}
