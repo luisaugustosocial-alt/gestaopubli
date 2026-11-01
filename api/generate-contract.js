@@ -28,18 +28,35 @@ INÍCIO: ${body.startDate || '[A DEFINIR]'}
 TÉRMINO/PRAZO: ${body.endDate || '[A DEFINIR]'}
 PROFISSIONAL NO PERFIL: ${body.professionalName || ''}
 TERMOS/INFORMAÇÕES ADICIONAIS: ${body.additionalTerms || '[Nenhuma informação adicional]'}`;
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + encodeURIComponent(apiKey), {
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + encodeURIComponent(apiKey);
+    const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.35, maxOutputTokens: 8192 }
       })
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      console.error('Gemini API error:', result?.error?.message || response.status);
-      return res.status(502).json({ error: 'O Gemini não conseguiu gerar a minuta. Verifique a chave API e o acesso ao modelo nas configurações.' });
+    };
+    let response;
+    let result;
+    // Gemini pode retornar 429/503 em picos temporários; tente novamente uma vez.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      response = await fetch(endpoint, requestOptions);
+      result = await response.json();
+      if (response.ok) break;
+      const message = result?.error?.message || '';
+      const temporary = response.status === 429 || response.status === 503 || /high demand|temporar|overload/i.test(message);
+      if (!temporary || attempt === 1) {
+        console.error('Gemini API error:', response.status, message);
+        if (response.status === 401 || response.status === 403 || /API key|api_key|permission|not authorized|invalid key/i.test(message)) {
+          return res.status(502).json({ error: 'O Google recusou a chave ou não autorizou este modelo. Confira se a chave GEMINI_API_KEY é do Google AI Studio e se a Gemini API está habilitada no projeto.' });
+        }
+        if (temporary) {
+          return res.status(503).json({ error: 'O Gemini está temporariamente sobrecarregado. Aguarde um minuto e tente gerar a minuta novamente.' });
+        }
+        return res.status(502).json({ error: 'O Gemini recusou a solicitação. Verifique se a chave tem acesso à Gemini API e tente novamente.' });
+      }
+      await new Promise(resolve => setTimeout(resolve, 900));
     }
     const contract = (result.candidates?.[0]?.content?.parts || []).map(part => part.text || '').join('\n').trim();
     if (!contract) return res.status(502).json({ error: 'O Gemini retornou uma resposta vazia. Tente novamente.' });
