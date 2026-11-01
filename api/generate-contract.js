@@ -4,7 +4,7 @@ function fallbackContract(body) {
   const h = body.hired || {};
   const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
   const location = value(body.location || '');
-  const includeWitnesses = body.includeWitnesses !== 'Não';
+  const includeWitnesses = body.includeWitnesses === 'Sim';
   const additional = String(body.additionalTerms || '').trim();
   const forumMatch = additional.match(/(?:foro|f[oó]rum)\s*(?:escolhido|eleito|de elei[cç][aã]o)?\s*[:\-]\s*([^\n.;]+)/i);
   const forumClause = forumMatch ? `\n\n11. ELEIÇÃO DE FORO\nPara dirimir controvérsias decorrentes deste contrato, as partes elegem o foro da comarca de ${forumMatch[1].trim()}, observadas as regras legais de competência aplicáveis e as hipóteses de competência absoluta.\n` : '';
@@ -51,7 +51,7 @@ As partes deverão tratar com cuidado as informações confidenciais recebidas e
 Alterações de escopo, suspensão ou encerramento antecipado deverão ser comunicados por escrito. Consequências financeiras, prazos de aviso e eventuais compensações devem ser acordados e preenchidos antes da assinatura: [DEFINIR ENTRE AS PARTES].
 
 10. DISPOSIÇÕES GERAIS
-Este documento é uma minuta inicial baseada nas informações fornecidas. As partes deverão revisar todos os campos, completar os dados ausentes e confirmar que as cláusulas refletem o que foi efetivamente negociado. Cláusulas adicionais: ${value(body.additionalTerms)}.
+Este documento é uma minuta inicial baseada nas informações fornecidas. As partes deverão revisar todos os campos, completar os dados ausentes e confirmar que as cláusulas refletem o que foi efetivamente negociado.
 
 11. LOCAL, DATA E ASSINATURAS
 Local: [PREENCHER]    Data: ${today}
@@ -100,7 +100,7 @@ PAGAMENTO: ${body.paymentTerms || '[A DEFINIR]'}
 INÍCIO: ${body.startDate || '[A DEFINIR]'}
 TÉRMINO/PRAZO: ${body.endDate || '[A DEFINIR]'}
 PROFISSIONAL NO PERFIL: ${body.professionalName || ''}
-TERMOS/INFORMAÇÕES ADICIONAIS: ${body.additionalTerms || '[Nenhuma informação adicional]'}`;
+TERMOS/INFORMAÇÕES ADICIONAIS — transforme em cláusulas específicas; não copie literalmente para disposições gerais: ${body.additionalTerms || '[Nenhuma informação adicional]'}\nLOCAL PARA ASSINATURA: ${body.location || '[A PREENCHER]'}\nINCLUIR CAMPOS DE TESTEMUNHAS: ${body.includeWitnesses || 'Sim'}`;
     const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + encodeURIComponent(apiKey);
     const requestOptions = {
       method: 'POST',
