@@ -28,7 +28,7 @@ INÍCIO: ${body.startDate || '[A DEFINIR]'}
 TÉRMINO/PRAZO: ${body.endDate || '[A DEFINIR]'}
 PROFISSIONAL NO PERFIL: ${body.professionalName || ''}
 TERMOS/INFORMAÇÕES ADICIONAIS: ${body.additionalTerms || '[Nenhuma informação adicional]'}`;
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(apiKey), {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + encodeURIComponent(apiKey), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
