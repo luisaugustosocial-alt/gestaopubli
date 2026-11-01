@@ -1,15 +1,88 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /projects/{recordId} {
-      allow read, create, update, delete: if request.auth != null
-        && (resource == null || resource.data.ownerUid == request.auth.uid)
-        && (request.method == 'delete' || request.resource.data.ownerUid == request.auth.uid);
+    function signedIn() {
+      return request.auth != null;
     }
-    match /clientApprovals/{approvalId} {
-      allow read, write: if request.auth != null
+
+    function ownsProject() {
+      return signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    function belongsToProject() {
+      return signedIn()
+        && request.auth.uid in resource.data.get('sharedUids', []);
+    }
+
+    function hasAcceptedInvite(projectId) {
+      return signedIn()
+        && request.resource.data.acceptedInviteId is string
+        && exists(/databases/$(database)/documents/invites/$(request.resource.data.acceptedInviteId))
+        && get(/databases/$(database)/documents/invites/$(request.resource.data.acceptedInviteId)).data.recipientUid == request.auth.uid
+        && get(/databases/$(database)/documents/invites/$(request.resource.data.acceptedInviteId)).data.projectId == projectId
+        && get(/databases/$(database)/documents/invites/$(request.resource.data.acceptedInviteId)).data.status == 'Aceito';
+    }
+
+    match /projects/{recordId} {
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow read: if ownsProject() || belongsToProject();
+
+      allow update: if ownsProject()
+        || hasAcceptedInvite(recordId)
+        || (
+          belongsToProject()
+          && resource.data.memberRoles[request.auth.uid] in ['Colaborador', 'Administrador']
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.sharedUids == resource.data.sharedUids
+          && request.resource.data.memberRoles == resource.data.memberRoles
+        );
+
+      allow delete: if ownsProject();
+    }
+
+    match /invites/{inviteId} {
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.recipientUid is string
+        && request.resource.data.projectId is string
+        && request.resource.data.permission in ['Colaborador', 'Administrador', 'Somente leitura']
+        && request.resource.data.status == 'Pendente';
+
+      allow read: if signedIn()
+        && (resource.data.recipientUid == request.auth.uid
+          || resource.data.ownerUid == request.auth.uid);
+
+      allow update: if signedIn()
+        && resource.data.recipientUid == request.auth.uid
+        && resource.data.status == 'Pendente'
+        && request.resource.data.status in ['Aceito', 'Recusado']
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.recipientUid == resource.data.recipientUid
+        && request.resource.data.projectId == resource.data.projectId
+        && request.resource.data.permission == resource.data.permission;
+
+      allow delete: if signedIn()
         && resource.data.ownerUid == request.auth.uid;
     }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if signedIn()
+        && resource.data.uid == request.auth.uid;
+    }
+
+    match /clientApprovals/{approvalId} {
+      allow read, write: if signedIn()
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
