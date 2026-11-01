@@ -53,4 +53,7 @@ Alterações de escopo, suspensão ou encerramento antecipado deverão ser comun
 10. DISPOSIÇÕES GERAIS
 Este documento é uma minuta inicial baseada nas informações fornecidas. As partes deverão revisar todos os campos, completar os dados ausentes e confirmar que as cláusulas refletem o que foi efetivamente negociado.
 
-    ${extraClauses}\n\n    ${finalNumber}. LOCAL, DATA E ASSINATURAS\n    Local: ${location}    Data: ${today}
+    ${extraClauses}
+
+    ${finalNumber}. LOCAL, DATA E ASSINATURAS
+    Local: ${location}    Data: ${today}
