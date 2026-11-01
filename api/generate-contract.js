@@ -1,3 +1,68 @@
+function fallbackContract(body) {
+  const value = (v) => String(v || '').trim() || '[PREENCHER]';
+  const c = body.contractor || {};
+  const h = body.hired || {};
+  const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Bahia' });
+  return `${value(body.contractName || 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS').toUpperCase()}
+
+Pelo presente instrumento particular, de um lado:
+
+CONTRATANTE: ${value(c.name)}, CPF/CNPJ ${value(c.document)}, com endereço em ${value(c.address)}, e-mail ${value(c.email)};
+
+e, de outro lado:
+
+CONTRATADO(A): ${value(h.name)}, CPF/CNPJ ${value(h.document)}, com endereço em ${value(h.address)};
+
+resolvem estabelecer as condições preliminares abaixo, que deverão ser conferidas e completadas pelas partes antes da assinatura.
+
+1. OBJETO
+O presente instrumento tem por objeto a prestação dos seguintes serviços: ${value(body.service)}.
+
+2. ESCOPO E ENTREGÁVEIS
+Os serviços e materiais previstos são: ${value(body.deliverables)}. Qualquer atividade não descrita expressamente deverá ser acordada por escrito entre as partes antes de sua execução.
+
+3. PRAZO E VIGÊNCIA
+Início previsto: ${value(body.startDate)}. Término ou prazo de execução: ${value(body.endDate)}. As partes deverão registrar por escrito eventuais alterações de cronograma.
+
+4. PREÇO E PAGAMENTO
+Valores, vencimentos e forma de pagamento: ${value(body.paymentTerms)}. Nenhum valor ou condição não informado neste pré-escopo é presumido; os dados pendentes devem ser preenchidos e aceitos pelas partes.
+
+5. REVISÕES E APROVAÇÕES
+Estão previstas as seguintes revisões: ${value(body.revisions)}. Solicitações que ultrapassem o escopo ou o limite de revisões deverão ser avaliadas e aprovadas previamente pelas partes, inclusive quanto a eventual custo e prazo adicional.
+
+6. OBRIGAÇÕES DAS PARTES
+O(A) CONTRATADO(A) deverá executar os serviços acordados com diligência e comunicar eventuais impedimentos relevantes. O(A) CONTRATANTE deverá fornecer informações, materiais, acessos e aprovações necessários em tempo hábil, além de cumprir as condições de pagamento acordadas.
+
+7. DIREITOS AUTORAIS E USO DE MATERIAIS
+A titularidade, licença de uso, entrega de arquivos editáveis e eventual autorização para uso de marcas, imagens ou portfólio deverão ser definidas expressamente pelas partes, respeitando a legislação aplicável e os direitos de terceiros. Condições específicas: ${value(body.additionalTerms)}.
+
+8. CONFIDENCIALIDADE E DADOS PESSOAIS
+As partes deverão tratar com cuidado as informações confidenciais recebidas e utilizar dados pessoais apenas para finalidades legítimas relacionadas à execução do serviço, observando a legislação aplicável, inclusive a LGPD, quando pertinente.
+
+9. ALTERAÇÕES, CANCELAMENTO E RESCISÃO
+Alterações de escopo, suspensão ou encerramento antecipado deverão ser comunicados por escrito. Consequências financeiras, prazos de aviso e eventuais compensações devem ser acordados e preenchidos antes da assinatura: [DEFINIR ENTRE AS PARTES].
+
+10. DISPOSIÇÕES GERAIS
+Este documento é uma minuta inicial baseada nas informações fornecidas. As partes deverão revisar todos os campos, completar os dados ausentes e confirmar que as cláusulas refletem o que foi efetivamente negociado. Cláusulas adicionais: ${value(body.additionalTerms)}.
+
+11. LOCAL, DATA E ASSINATURAS
+Local: [PREENCHER]    Data: ${today}
+
+CONTRATANTE: ____________________________________
+Nome: ${value(c.name)}
+CPF/CNPJ: ${value(c.document)}
+
+CONTRATADO(A): __________________________________
+Nome: ${value(h.name)}
+CPF/CNPJ: ${value(h.document)}
+
+TESTEMUNHA 1: __________________ CPF: __________________
+
+TESTEMUNHA 2: __________________ CPF: __________________
+
+NOTA: Minuta preliminar gerada automaticamente a partir do pré-escopo, sem validação jurídica. Recomenda-se revisão por profissional habilitado antes da assinatura.`;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -52,7 +117,12 @@ TERMOS/INFORMAÇÕES ADICIONAIS: ${body.additionalTerms || '[Nenhuma informaçã
           return res.status(502).json({ error: 'O Google recusou a chave ou não autorizou este modelo. Confira se a chave GEMINI_API_KEY é do Google AI Studio e se a Gemini API está habilitada no projeto.' });
         }
         if (temporary) {
-          return res.status(503).json({ error: 'O Gemini está temporariamente sobrecarregado. Aguarde um minuto e tente gerar a minuta novamente.' });
+          console.warn('Gemini indisponível; retornando minuta-base para não bloquear o fluxo.');
+          return res.status(200).json({
+            contract: fallbackContract(body),
+            fallback: true,
+            message: 'O Gemini está temporariamente sobrecarregado. Foi criada uma minuta-base com os dados preenchidos para você não ficar bloqueado; revise os campos [PREENCHER].'
+          });
         }
         return res.status(502).json({ error: 'O Gemini recusou a solicitação. Verifique se a chave tem acesso à Gemini API e tente novamente.' });
       }
